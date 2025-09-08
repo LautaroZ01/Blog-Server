@@ -196,6 +196,12 @@ export class AuthController {
                 return
             }
 
+            if(user.status === 'inactive'){
+                const error = new Error('La cuenta no ha sido desactivada')
+                res.status(401).json({ error: error.message })
+                return
+            }
+
             if (!user.isVerified) {
                 const token = new Token()
                 token.user = user.id

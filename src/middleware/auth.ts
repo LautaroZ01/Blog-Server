@@ -24,6 +24,12 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         if (typeof decoded === 'object' && decoded.id) {
             const user = await User.findById(decoded.id).select('_id name email role photo status')
 
+            if(user.status === 'inactive'){
+                const error = new Error('La cuenta no ha sido desactivada')
+                res.status(401).json({ error: error.message })
+                return
+            }
+
             if (user) {
                 req.user = user
                 next()
