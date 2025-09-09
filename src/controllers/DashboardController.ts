@@ -6,14 +6,22 @@ import Comment, { commentStatus, IComment } from "../models/Comment";
 import User from "../models/User";
 import { Types } from "mongoose";
 
-interface Query {
+interface Query{
+    search?: string;
+}
+interface QueryUser extends Query{
     role?: string;
     status?: string;
-    search?: string;
+}
+
+interface QueryPost extends Query{
+    status?: string;
+    category?: string;
+    tag?: string;
 }
 
 export class DashboardController {
-    static getAllUsers = async (req: Request<{}, {}, {}, Query>, res: Response) => {
+    static getAllUsers = async (req: Request<{}, {}, {}, QueryUser>, res: Response) => {
         const { role, status, search = '' } = req.query;
         try {
             const query: Record<string, any> = { _id: { $ne: req.user.id } };
@@ -189,9 +197,20 @@ export class DashboardController {
         }
     }
 
-    static getPosts = async (req: Request, res: Response) => {
+    static getPosts = async (req: Request<{}, {}, {}, QueryPost>, res: Response) => {
         try {
-            const posts = await Post.find({ author: req.user.id })
+            const { status, category, tag, search } = req.query
+
+            const query: Record<string, any> = { author: req.user.id }
+
+            if (status) query.status = status
+            if (category) query.category = await Category.findOne({ name: category }).select('_id')
+            if (tag) query.tags = await Tag.findOne({ name: tag }).select('_id')
+            if (search) query.$or = [
+                { title: { $regex: search as string, $options: 'i' } }
+            ]
+
+            const posts = await Post.find(query)
                 .populate({
                     path: 'category',
                     select: 'name slug'
@@ -199,9 +218,13 @@ export class DashboardController {
                     path: 'tags',
                     select: 'slug'
                 }).select('-__v -author -content')
-
-            res.json(posts)
+            
+            const categories = await Category.find().select('name')
+            const tags = await Tag.find().select('name')
+            
+            res.json({posts, categories, tags})
         } catch (error) {
+            console.error(error)
             res.status(500).json({ error: 'Hubo un error' });
         }
     }
