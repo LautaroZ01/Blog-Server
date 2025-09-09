@@ -6,10 +6,29 @@ import Comment, { commentStatus, IComment } from "../models/Comment";
 import User from "../models/User";
 import { Types } from "mongoose";
 
+interface Query {
+    role?: string;
+    status?: string;
+    search?: string;
+}
+
 export class DashboardController {
-    static getAllUsers = async (req: Request, res: Response) => {
+    static getAllUsers = async (req: Request<{}, {}, {}, Query>, res: Response) => {
+        const { role, status, search = '' } = req.query;
         try {
-            const users = await User.find().ne('_id', req.user.id)
+            const query: Record<string, any> = { _id: { $ne: req.user.id } };
+            
+            if (role) query.role = role;
+            if (status) query.status = status;
+            if (search) {
+                query.$or = [
+                    { name: { $regex: search as string, $options: 'i' } },
+                    { lastname: { $regex: search as string, $options: 'i' } },
+                    { email: { $regex: search as string, $options: 'i' } }
+                ];
+            }
+
+            const users = await User.find(query)
                 .select('-createdAt -updatedAt -__v -password -bio -isVerified -providerId -birthdate -nickname -country -provider')
             res.json(users)
         } catch (error) {
