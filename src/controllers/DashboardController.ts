@@ -5,16 +5,18 @@ import Post from "../models/Post";
 import Comment, { commentStatus, IComment } from "../models/Comment";
 import User from "../models/User";
 import { Types } from "mongoose";
+import { LIMIT_PER_PAGE } from "../utils/util";
 
-interface Query{
+interface Query {
     search?: string;
+    page?: string;
 }
-interface QueryUser extends Query{
+interface QueryUser extends Query {
     role?: string;
     status?: string;
 }
 
-interface QueryPost extends Query{
+interface QueryPost extends Query {
     status?: string;
     category?: string;
     tag?: string;
@@ -22,10 +24,10 @@ interface QueryPost extends Query{
 
 export class DashboardController {
     static getAllUsers = async (req: Request<{}, {}, {}, QueryUser>, res: Response) => {
-        const { role, status, search = '' } = req.query;
+        const { role, status, search = '', page = '1' } = req.query;
         try {
             const query: Record<string, any> = { _id: { $ne: req.user.id } };
-            
+
             if (role) query.role = role;
             if (status) query.status = status;
             if (search) {
@@ -36,9 +38,25 @@ export class DashboardController {
                 ];
             }
 
+            const pageNumber = parseInt(page as string, 10) || 1;
+            const limitNumber = LIMIT_PER_PAGE;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            const total = await User.countDocuments(query);
+            const totalPages = Math.ceil(total / limitNumber);
+
+            const pagination = {
+                total,
+                page: pageNumber,
+                totalPages
+            }
+
             const users = await User.find(query)
                 .select('-createdAt -updatedAt -__v -password -bio -isVerified -providerId -birthdate -nickname -country -provider')
-            res.json(users)
+                .skip(skip)
+                .limit(limitNumber)
+
+            res.json({ users, pagination })
         } catch (error) {
             res.status(500).json({ error: 'Hubo un error' });
         }
@@ -135,29 +153,42 @@ export class DashboardController {
 
     }
 
-    static deleteUser = async (req: Request, res: Response)=>{
-        const {userId} = req.params
+    static deleteUser = async (req: Request, res: Response) => {
+        const { userId } = req.params
 
         try {
             req.registeredUser.status = 'inactive'
             req.registeredUser.isVerified = false
             await req.registeredUser.save()
-            
+
             res.send('Usuario eliminado correctamente')
         } catch (error) {
             res.status(500).json({ error: 'Hubo un error' });
         }
     }
 
-    static getCategories = async (req: Request<{}, Query>, res: Response) => {
+    static getCategories = async (req: Request<{}, {}, {}, Query>, res: Response) => {
         try {
-            const { search } = req.query
+            const { search, page = "1" } = req.query
             const query: Record<string, any> = {}
             if (search) query.name = { $regex: search as string, $options: 'i' }
 
-            const categories = await Category.find(query).select('-createdAt -updatedAt -__v')
-            
-            res.json(categories)
+            const pageNumber = parseInt(page as string, 10) || 1;
+            const limitNumber = LIMIT_PER_PAGE;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            const total = await Category.countDocuments(query);
+            const totalPages = Math.ceil(total / limitNumber);
+
+            const pagination = {
+                total,
+                page: pageNumber,
+                totalPages
+            }
+
+            const categories = await Category.find(query).select('-createdAt -updatedAt -__v').skip(skip).limit(limitNumber)
+
+            res.json({ categories, pagination })
         } catch (error) {
             res.status(500).json({ error: 'Hubo un error' });
         }
@@ -178,15 +209,28 @@ export class DashboardController {
         }
     }
 
-    static getTags = async (req: Request<{}, Query>, res: Response) => {
+    static getTags = async (req: Request<{}, {}, {}, Query>, res: Response) => {
         try {
-            const { search } = req.query
+            const { search, page = "1" } = req.query
             const query: Record<string, any> = {}
             if (search) query.name = { $regex: search as string, $options: 'i' }
 
-            const tags = await Tag.find(query).select('-createdAt -updatedAt -__v')
-            
-            res.json(tags)
+            const pageNumber = parseInt(page as string, 10) || 1;
+            const limitNumber = LIMIT_PER_PAGE;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            const total = await Tag.countDocuments(query);
+            const totalPages = Math.ceil(total / limitNumber);
+
+            const pagination = {
+                total,
+                page: pageNumber,
+                totalPages
+            }
+
+            const tags = await Tag.find(query).select('-createdAt -updatedAt -__v').skip(skip).limit(limitNumber)
+
+            res.json({ tags, pagination })
         } catch (error) {
             res.status(500).json({ error: 'Hubo un error' });
         }
@@ -209,7 +253,7 @@ export class DashboardController {
 
     static getPosts = async (req: Request<{}, {}, {}, QueryPost>, res: Response) => {
         try {
-            const { status, category, tag, search } = req.query
+            const { status, category, tag, search, page = "1" } = req.query
 
             const query: Record<string, any> = { author: req.user.id }
 
@@ -220,6 +264,19 @@ export class DashboardController {
                 { title: { $regex: search as string, $options: 'i' } }
             ]
 
+            const pageNumber = parseInt(page as string, 10) || 1;
+            const limitNumber = LIMIT_PER_PAGE;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            const total = await Post.countDocuments(query);
+            const totalPages = Math.ceil(total / limitNumber);
+
+            const pagination = {
+                total,
+                page: pageNumber,
+                totalPages
+            }
+
             const posts = await Post.find(query)
                 .populate({
                     path: 'category',
@@ -228,11 +285,13 @@ export class DashboardController {
                     path: 'tags',
                     select: 'slug'
                 }).select('-__v -author -content')
-            
+                .skip(skip)
+                .limit(limitNumber)
+
             const categories = await Category.find().select('name')
             const tags = await Tag.find().select('name')
-            
-            res.json({posts, categories, tags})
+
+            res.json({ posts, categories, tags, pagination })
         } catch (error) {
             console.error(error)
             res.status(500).json({ error: 'Hubo un error' });
