@@ -149,9 +149,14 @@ export class DashboardController {
         }
     }
 
-    static getCategories = async (req: Request, res: Response) => {
+    static getCategories = async (req: Request<{}, Query>, res: Response) => {
         try {
-            const categories = await Category.find().select('-createdAt -updatedAt -__v')
+            const { search } = req.query
+            const query: Record<string, any> = {}
+            if (search) query.name = { $regex: search as string, $options: 'i' }
+
+            const categories = await Category.find(query).select('-createdAt -updatedAt -__v')
+            
             res.json(categories)
         } catch (error) {
             res.status(500).json({ error: 'Hubo un error' });
@@ -173,9 +178,14 @@ export class DashboardController {
         }
     }
 
-    static getTags = async (req: Request, res: Response) => {
+    static getTags = async (req: Request<{}, Query>, res: Response) => {
         try {
-            const tags = await Tag.find().select('-createdAt -updatedAt -__v')
+            const { search } = req.query
+            const query: Record<string, any> = {}
+            if (search) query.name = { $regex: search as string, $options: 'i' }
+
+            const tags = await Tag.find(query).select('-createdAt -updatedAt -__v')
+            
             res.json(tags)
         } catch (error) {
             res.status(500).json({ error: 'Hubo un error' });
