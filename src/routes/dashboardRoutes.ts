@@ -56,6 +56,8 @@ router.delete('/user/:userId',
     DashboardController.deleteUser
 )
 
+router.get('/writer', DashboardController.getWriter)
+
 // Categories
 router.get('/category',
     authenticate,

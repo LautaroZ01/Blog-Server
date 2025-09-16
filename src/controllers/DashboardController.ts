@@ -365,5 +365,19 @@ export class DashboardController {
         }
     }
 
+    static getWriter = async (req: Request, res: Response) => {
+        const writerEmail = 'correo@correo.com'
+        try {
+            const writer = await User.findOne({ email: writerEmail }).select('-password -createdAt -updatedAt -__v -comments -role')
+            
+            if (!writer) {
+                res.status(404).json({ error: 'No se encontró el escritor' })
+                return
+            }
 
+            res.json(writer)
+        } catch (error) {
+            res.status(500).json({ error: 'Hubo un error' })
+        }
+    }
 }
