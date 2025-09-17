@@ -368,7 +368,7 @@ export class DashboardController {
     static getWriter = async (req: Request, res: Response) => {
         const writerEmail = 'correo@correo.com'
         try {
-            const writer = await User.findOne({ email: writerEmail }).select('-password -createdAt -updatedAt -__v -comments -role')
+            const writer = await User.findOne({ email: writerEmail }).select('-password -createdAt -updatedAt -__v -comments -role -isVerified -provider -birthdate -country -status')
             
             if (!writer) {
                 res.status(404).json({ error: 'No se encontró el escritor' })
