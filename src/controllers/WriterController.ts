@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import User from "../models/User";
+import { ContactEmail } from "../email/ContactEmail";
 
 export class WriterController {
     static profile = async (req: Request, res: Response) => {

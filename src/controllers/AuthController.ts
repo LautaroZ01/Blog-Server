@@ -6,6 +6,7 @@ import Token from "../models/Token"
 import { AuthEmail } from "../email/AuthEmail"
 import { generateJWT } from "../utils/jwt"
 import { deletePhoto, uploadImage } from "../utils/cloudinary"
+import { ContactEmail } from "../email/ContactEmail"
 
 export class AuthController {
     static createAccount = async (req: Request, res: Response) => {
@@ -196,7 +197,7 @@ export class AuthController {
                 return
             }
 
-            if(user.status === 'inactive'){
+            if (user.status === 'inactive') {
                 const error = new Error('La cuenta no ha sido desactivada')
                 res.status(401).json({ error: error.message })
                 return
@@ -394,5 +395,15 @@ export class AuthController {
         }
 
         res.send('Contraseña correcta')
+    }
+
+    static sendEmail = async (req: Request, res: Response) => {
+        try {
+            const { email, name, subject, message } = req.body
+            ContactEmail.sendContactEmail({ email, name, subject, message })
+            res.send('Correo enviado correctamente')
+        } catch (error) {
+            res.status(500).json({ error: 'Hubo un error' });
+        }
     }
 }

@@ -119,4 +119,13 @@ router.post('/check-password',
     AuthController.checkPassword
 )
 
+router.post('/email',
+    body('email').notEmpty().withMessage('El correo es obligatorio'),
+    body('name').notEmpty().withMessage('El nombre es obligatorio'),
+    body('subject').notEmpty().withMessage('El asunto es obligatorio'),
+    body('message').notEmpty().withMessage('El mensaje es obligatorio'),
+    handleInputErrors,
+    AuthController.sendEmail
+)
+
 export default router
