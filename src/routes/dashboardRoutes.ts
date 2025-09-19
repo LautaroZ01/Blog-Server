@@ -56,7 +56,13 @@ router.delete('/user/:userId',
     DashboardController.deleteUser
 )
 
-router.get('/writer', DashboardController.getWriter)
+router.get('/writer/:writerId?',
+    param('writerId')
+        .optional()
+        .isMongoId().withMessage('El id del escritor no es valido'),
+    handleInputErrors,
+    DashboardController.getWriter
+)
 
 // Categories
 router.get('/category',

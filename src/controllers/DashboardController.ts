@@ -3,7 +3,7 @@ import Category from "../models/Category";
 import Tag from "../models/Tag";
 import Post from "../models/Post";
 import Comment, { commentStatus, IComment } from "../models/Comment";
-import User from "../models/User";
+import User, { IUser } from "../models/User";
 import { Types } from "mongoose";
 import { LIMIT_PER_PAGE } from "../utils/util";
 
@@ -366,16 +366,31 @@ export class DashboardController {
     }
 
     static getWriter = async (req: Request, res: Response) => {
+        const { writerId } = req.params
         const writerEmail = 'correo@correo.com'
         try {
-            const writer = await User.findOne({ email: writerEmail }).select('-password -createdAt -updatedAt -__v -comments -role -isVerified -provider -birthdate -country -status')
+            const selected = '-password -createdAt -updatedAt -__v -comments -isVerified -provider -status'
+            let writer: IUser | null
+            if(writerId) {
+                writer = await User.findById(writerId).select(selected)
+
+            }else{
+                writer = await User.findOne({ email: writerEmail }).select(selected)
+            }
             
             if (!writer) {
                 res.status(404).json({ error: 'No se encontró el escritor' })
                 return
             }
 
-            res.json(writer)
+            if(writer.role !== 'writer') {
+                res.status(403).json({ error: 'No tienes permiso para ver este usuario' })
+                return
+            }
+
+            const { role, ...writerInfo } = writer.toObject()
+
+            res.json(writerInfo)
         } catch (error) {
             res.status(500).json({ error: 'Hubo un error' })
         }
