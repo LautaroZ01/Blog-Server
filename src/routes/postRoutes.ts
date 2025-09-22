@@ -18,6 +18,7 @@ router.post('/',
     body('category').notEmpty().withMessage('La categoría es obligatoria').isMongoId().withMessage('La categoría no es válida'),
     body('tags').notEmpty().withMessage('Los tags son obligatorios'),
     body('status').notEmpty().withMessage('El estado es obligatorio').isIn(postStatusValues).withMessage('El estado no es válido'),
+    body('sections').optional().isArray().withMessage('Las secciones deben ser una lista'),
     handleInputErrors,
     postMiddleware,
     PostController.createPost

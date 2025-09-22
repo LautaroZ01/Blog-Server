@@ -6,6 +6,7 @@ import { handleCategoryChange, handleTagChange } from "../services/postService";
 import { deletePhoto, uploadImage } from "../utils/cloudinary";
 import Comment, { commentStatus } from "../models/Comment";
 import User from "../models/User";
+import PostSection, { IPostSection } from "../models/PostSection";
 
 export class PostController {
     static getPosts = async (req: Request, res: Response) => {
@@ -52,7 +53,7 @@ export class PostController {
                         path: 'tags',
                         select: 'name slug'
                     })
-                    .select('-__v -viewCount -updatedAt')
+                    .select('-__v -viewCount -updatedAt -sections')
                     .sort('-createdAt')
                     .skip(skip)
                     .limit(limitNumber),
@@ -93,6 +94,10 @@ export class PostController {
                     path: 'tags',
                     select: 'name slug'
                 })
+                .populate({
+                    path: 'sections',
+                    select: 'title content thumbnail'
+                })
                 .select('-__v -viewCount -updatedAt')
 
             if (!post) {
@@ -108,7 +113,7 @@ export class PostController {
 
     static createPost = async (req: Request, res: Response) => {
         try {
-            const { title, content, ...rest } = req.body
+            const { title, content, sections = [], ...rest } = req.body
 
             const postExists = await Post.findOne({ title })
             if (postExists) {
@@ -130,9 +135,26 @@ export class PostController {
                 await tagExists.save()
             })
 
+            if (Array.isArray(sections) && sections.length > 0) {
+                const createdSections = await Promise.all(
+                    sections.map(async (section: IPostSection) => {
+                        const newSection = new PostSection({
+                            title: section.title,
+                            content: section.content,
+                            thumbnail: section.thumbnail,
+                            post: post._id
+                        })
+                        await newSection.save()
+                        return newSection._id
+                    })
+                )
+
+                post.sections.push(...createdSections)
+            }
+
             req.category.posts.push(post.id)
 
-            Promise.all([await post.save(), await req.category.save()])
+            await Promise.all([await req.category.save(), await post.save()])
 
             res.status(201).json({
                 message: 'Articulo creado exitosamente',
@@ -256,7 +278,7 @@ export class PostController {
         try {
             const post = req.post
 
-            if(post.likes.includes(req.user.id)) {
+            if (post.likes.includes(req.user.id)) {
                 res.status(400).json({ error: 'Ya has dado like a este articulo' })
                 return
             }
@@ -273,7 +295,7 @@ export class PostController {
         try {
             const post = req.post
 
-            if(!post.likes.includes(req.user.id)) {
+            if (!post.likes.includes(req.user.id)) {
                 res.status(400).json({ error: 'No has dado like a este articulo' })
                 return
             }

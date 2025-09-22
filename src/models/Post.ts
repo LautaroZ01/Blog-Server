@@ -3,6 +3,7 @@ import { Document, PopulatedDoc, Types } from "mongoose";
 import slugify from "slugify";
 import { slugPostPreSave } from "../utils/slug";
 import Comment from "./Comment";
+import PostSection from "./PostSection";
 
 const postStatus = {
     DRAFT: 'draft',
@@ -22,6 +23,7 @@ export interface IPost extends Document {
     images: string[]
     viewCount: number
     status: PostStatus
+    sections: Types.ObjectId[]
     comments: Types.ObjectId[]
     tags: Types.ObjectId[]
     likes: Types.ObjectId[]
@@ -60,6 +62,11 @@ const PostSchema: Schema = new Schema({
         enum: Object.values(postStatus),
         default: postStatus.DRAFT
     },
+    sections: [{
+        type: Types.ObjectId,
+        ref: 'PostSection',
+        default: []
+    }],
     comments: [{
         type: Types.ObjectId,
         ref: 'Comment'
@@ -84,6 +91,7 @@ slugPostPreSave(PostSchema)
 PostSchema.pre('deleteOne', { document: true, query: false }, async function () {
     const postId = this._id;
     await Comment.deleteMany({ post: postId });
+    await PostSection.deleteMany({ post: postId });
 });
 
 const Post = mongoose.model<IPost>('Post', PostSchema)
