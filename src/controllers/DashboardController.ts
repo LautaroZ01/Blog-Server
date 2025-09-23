@@ -284,7 +284,7 @@ export class DashboardController {
                 }).populate({
                     path: 'tags',
                     select: 'slug'
-                }).select('-__v -author -content')
+                }).select('-__v -author -content -sections')
                 .skip(skip)
                 .limit(limitNumber)
 
