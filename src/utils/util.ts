@@ -1,1 +1,1 @@
-export const LIMIT_PER_PAGE = 8
+export const LIMIT_PER_PAGE = 5
