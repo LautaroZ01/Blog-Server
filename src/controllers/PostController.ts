@@ -218,7 +218,6 @@ export class PostController {
 
             res.send('Articulo actualizado')
         } catch (error) {
-            console.error(error);
             res.status(500).json({ error: error.message });
         }
     }
