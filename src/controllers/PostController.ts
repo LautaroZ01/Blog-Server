@@ -2,7 +2,7 @@ import { Request, Response } from "express"
 import Category from "../models/Category";
 import Tag from "../models/Tag";
 import Post from "../models/Post";
-import { handleCategoryChange, handleTagChange } from "../services/postService";
+import { handleCategoryChange, handleTagChange, updateSections } from "../services/postService";
 import { deletePhoto, uploadImage } from "../utils/cloudinary";
 import Comment, { commentStatus } from "../models/Comment";
 import User from "../models/User";
@@ -187,7 +187,7 @@ export class PostController {
 
     static updatePost = async (req: Request, res: Response) => {
         try {
-            const { title, content, category, ...rest } = req.body
+            const { title, content, category, sections, ...rest } = req.body
 
             const postExists = await Post.findOne({ title });
             if (postExists && postExists.id.toString() !== req.post.id.toString()) {
@@ -209,11 +209,17 @@ export class PostController {
                 req.post[key] = rest[key];
             });
 
+            if (sections) {
+                const updatedSectionIds = await updateSections(req.post.id, sections)
+                req.post.sections = updatedSectionIds
+            }
+
             await req.post.save()
 
             res.send('Articulo actualizado')
         } catch (error) {
-            res.status(500).json({ error: 'Hubo un error' });
+            console.error(error);
+            res.status(500).json({ error: error.message });
         }
     }
 

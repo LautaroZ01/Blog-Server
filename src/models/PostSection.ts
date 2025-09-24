@@ -1,4 +1,4 @@
-import mongoose, { Schema, Types } from "mongoose"
+import mongoose, { Schema, trusted, Types } from "mongoose"
 
 export interface IPostSection {
     title: string
@@ -10,12 +10,11 @@ export interface IPostSection {
 const PostSectionSchema: Schema = new Schema({
     title: {
         type: String,
-        requier: true,
-        unique: true
+        require: true
     },
     content: {
         type: String,
-        requier: true
+        require: true
     },
     thumbnail: {
         type: String,
@@ -24,9 +23,11 @@ const PostSectionSchema: Schema = new Schema({
     post: {
         type: Types.ObjectId,
         ref: 'Post',
-        requier: true
+        require: true
     }
 }, { timestamps: true })
+
+PostSectionSchema.index({ title: 1, post: 1 }, { unique: true })
 
 const PostSection = mongoose.model<IPostSection>('PostSection', PostSectionSchema)
 

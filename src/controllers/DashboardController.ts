@@ -311,7 +311,11 @@ export class DashboardController {
                     path: 'tags',
                     select: '-createdAt -updatedAt -__v'
                 })
-                .select('title content images status category tags author');
+                .populate({
+                    path: 'sections',
+                    select: '-createdAt -updatedAt -__v -post'
+                })
+                .select('title content images status category tags author sections');
 
             if (!post) {
                 res.status(404).json({ error: 'El articulo no existe' })
