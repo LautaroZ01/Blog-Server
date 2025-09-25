@@ -231,6 +231,16 @@ export class PostController {
                 await Promise.all(post.images.map(async (image) => await deletePhoto(image, 'auto')));
             }
 
+            // Eliminar imagenes de las secciones antes de eliminar el post
+            if (post.sections && post.sections.length > 0) {
+                await Promise.all(post.sections.map(async (sectionId) => {
+                    const section = await PostSection.findById(sectionId);
+                    if (section && section.thumbnail) {
+                        await deletePhoto(section.thumbnail, 'auto');
+                    }
+                }));
+            }
+
             // Eliminar el post
             await post.deleteOne();
 
