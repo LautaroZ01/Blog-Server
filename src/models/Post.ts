@@ -28,6 +28,7 @@ export interface IPost extends Document {
     tags: Types.ObjectId[]
     likes: Types.ObjectId[]
     category: Types.ObjectId
+    readTime: number
 }
 
 const PostSchema: Schema = new Schema({
@@ -54,6 +55,10 @@ const PostSchema: Schema = new Schema({
         type: String,
     }],
     viewCount: {
+        type: Number,
+        default: 0
+    },
+    readTime: {
         type: Number,
         default: 0
     },

@@ -7,6 +7,7 @@ import { deletePhoto, uploadImage } from "../utils/cloudinary";
 import Comment, { commentStatus } from "../models/Comment";
 import User from "../models/User";
 import PostSection, { IPostSection } from "../models/PostSection";
+import { calculateReadTime } from "../utils/util";
 
 export class PostController {
     static getPosts = async (req: Request, res: Response) => {
@@ -135,9 +136,12 @@ export class PostController {
                 await tagExists.save()
             })
 
+            let fullContent = req.content || '';
+
             if (Array.isArray(sections) && sections.length > 0) {
                 const createdSections = await Promise.all(
                     sections.map(async (section: IPostSection) => {
+                        fullContent += ' ' + section.content;
                         const newSection = new PostSection({
                             title: section.title,
                             content: section.content,
@@ -151,6 +155,8 @@ export class PostController {
 
                 post.sections.push(...createdSections)
             }
+
+            post.readTime = calculateReadTime(fullContent) + 2
 
             req.category.posts.push(post.id)
 
@@ -205,6 +211,7 @@ export class PostController {
 
             req.post.title = title
             req.post.content = req.content
+            let fullContent = req.content || '';
             Object.keys(rest).forEach(key => {
                 req.post[key] = rest[key];
             });
@@ -212,7 +219,11 @@ export class PostController {
             if (sections) {
                 const updatedSectionIds = await updateSections(req.post.id, sections)
                 req.post.sections = updatedSectionIds
+                const sectionsText = sections.map((section: IPostSection) => section.content).join(' ');
+                fullContent += ' ' + sectionsText;
             }
+
+            req.post.readTime = calculateReadTime(fullContent) + 2
 
             await req.post.save()
 
