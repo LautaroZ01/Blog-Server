@@ -99,13 +99,19 @@ export class PostController {
                     path: 'sections',
                     select: 'title content thumbnail'
                 })
-                .select('-__v -viewCount -updatedAt')
+                .select('-__v -updatedAt')
 
             if (!post) {
                 res.status(404).json({ error: 'El articulo no existe' })
                 return
             }
-            res.json(post)
+
+            post.viewCount += 1
+            await post.save()
+
+            const { viewCount, ...sendPost } = post.toObject()
+
+            res.json(sendPost)
         } catch (error) {
             console.error('Error fetching post by slug:', error);
             res.status(500).json({ error: 'Hubo un error al obtener el articulo' });
