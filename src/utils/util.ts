@@ -1,4 +1,4 @@
-export const LIMIT_PER_PAGE = 5
+export const LIMIT_PER_PAGE = 6
 
 export function calculateReadTime(content: string): number {
     const wordsPerMinute = 180;
