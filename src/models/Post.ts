@@ -1,6 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { Document, PopulatedDoc, Types } from "mongoose";
-import slugify from "slugify";
+import { Document, Types } from "mongoose";
 import { slugPostPreSave } from "../utils/slug";
 import Comment from "./Comment";
 import PostSection from "./PostSection";
