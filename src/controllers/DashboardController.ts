@@ -20,6 +20,7 @@ interface QueryPost extends Query {
     status?: string;
     category?: string;
     tag?: string;
+    writer?: string;
 }
 
 export class DashboardController {
@@ -253,13 +254,15 @@ export class DashboardController {
 
     static getPosts = async (req: Request<{}, {}, {}, QueryPost>, res: Response) => {
         try {
-            const { status, category, tag, search, page = "1" } = req.query
+            const { status, category, tag, writer, search, page = "1" } = req.query
 
-            const query: Record<string, any> = { author: req.user.id }
+            let query: Record<string, any>
+            req.user.role !== 'admin' && (query = { author: req.user.id })
 
             if (status) query.status = status
             if (category) query.category = await Category.findOne({ name: category }).select('_id')
             if (tag) query.tags = await Tag.findOne({ name: tag }).select('_id')
+            if (writer) query.author = await User.findOne({ email: writer }).select('_id')
             if (search) query.$or = [
                 { title: { $regex: search as string, $options: 'i' } }
             ]
@@ -290,8 +293,9 @@ export class DashboardController {
 
             const categories = await Category.find().select('name')
             const tags = await Tag.find().select('name')
+            const writers = await User.find().select('name email').where('role', 'writer')
 
-            res.json({ posts, categories, tags, pagination })
+            res.json({ posts, categories, tags, writers, pagination })
         } catch (error) {
             console.error(error)
             res.status(500).json({ error: 'Hubo un error' });
@@ -375,19 +379,19 @@ export class DashboardController {
         try {
             const selected = '-password -createdAt -updatedAt -__v -comments -isVerified -provider -status'
             let writer: IUser | null
-            if(writerId) {
+            if (writerId) {
                 writer = await User.findById(writerId).select(selected)
 
-            }else{
+            } else {
                 writer = await User.findOne({ email: writerEmail }).select(selected)
             }
-            
+
             if (!writer) {
                 res.status(404).json({ error: 'No se encontró el escritor' })
                 return
             }
 
-            if(writer.role !== 'writer') {
+            if (writer.role !== 'writer') {
                 res.status(403).json({ error: 'No tienes permiso para ver este usuario' })
                 return
             }

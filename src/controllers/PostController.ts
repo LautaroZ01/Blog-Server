@@ -17,6 +17,7 @@ export class PostController {
                 page = '1',
                 category,
                 tag,
+                writer,
                 search
             } = req.query;
 
@@ -25,6 +26,8 @@ export class PostController {
             if (category) query.category = await Category.findOne({ name: category }).select('_id')
 
             if (tag) query.tags = await Tag.findOne({ name: tag }).select('_id')
+
+            if (writer) query.author = await User.findOne({ email: writer }).select('_id')
 
             if (search) query.$or = [
                 { title: { $regex: search as string, $options: 'i' } }
@@ -70,12 +73,14 @@ export class PostController {
 
             const categories = await Category.find().select('name')
             const tags = await Tag.find().select('name')
+            const writers = await User.find().select('name email').where('role', 'writer')
 
             res.json({
-                data: posts,
+                posts,
                 pagination,
                 categories,
-                tags
+                tags,
+                writers
             });
         } catch (error) {
             console.error('Error fetching posts:', error);
