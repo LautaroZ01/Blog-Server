@@ -7,13 +7,13 @@ import { deletePhoto, uploadImage } from "../utils/cloudinary";
 import Comment, { commentStatus } from "../models/Comment";
 import User from "../models/User";
 import PostSection, { IPostSection } from "../models/PostSection";
-import { calculateReadTime } from "../utils/util";
+import { calculateReadTime, LIMIT_PER_PAGE } from "../utils/util";
 
 export class PostController {
     static getPosts = async (req: Request, res: Response) => {
         try {
             const {
-                limit = '10',
+                limit,
                 page = '1',
                 category,
                 tag,
@@ -22,24 +22,23 @@ export class PostController {
 
             const query: any = { status: 'published' };
 
-            if (category) {
-                query.category = category;
-            }
+            if (category) query.category = await Category.findOne({ name: category }).select('_id')
 
-            if (tag) {
-                query.tags = tag;
-            }
-            if (search) {
-                query.$or = [
-                    { title: { $regex: search, $options: 'i' } },
-                    { excerpt: { $regex: search, $options: 'i' } },
-                    { content: { $regex: search, $options: 'i' } }
-                ];
-            }
+            if (tag) query.tags = await Tag.findOne({ name: tag }).select('_id')
+
+            if (search) query.$or = [
+                { title: { $regex: search as string, $options: 'i' } }
+            ]
 
             const pageNumber = parseInt(page as string, 10);
-            const limitNumber = parseInt(limit as string, 10);
+            let limitNumber = LIMIT_PER_PAGE
+
+            if (limit) {
+                limitNumber = parseInt(limit as string, 10);
+            }
+
             const skip = (pageNumber - 1) * limitNumber;
+
             const [posts, total] = await Promise.all([
                 Post.find(query)
                     .populate({
@@ -63,16 +62,20 @@ export class PostController {
 
             const totalPages = Math.ceil(total / limitNumber);
 
+            const pagination = {
+                total,
+                page: pageNumber,
+                totalPages
+            }
+
+            const categories = await Category.find().select('name')
+            const tags = await Tag.find().select('name')
+
             res.json({
                 data: posts,
-                pagination: {
-                    total,
-                    page: pageNumber,
-                    limit: limitNumber,
-                    totalPages,
-                    hasNextPage: pageNumber < totalPages,
-                    hasPreviousPage: pageNumber > 1
-                }
+                pagination,
+                categories,
+                tags
             });
         } catch (error) {
             console.error('Error fetching posts:', error);
