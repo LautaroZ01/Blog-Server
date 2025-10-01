@@ -156,7 +156,11 @@ export class ChatController {
 
             let users = []
 
-            if (req.user.role === 'writer') {
+            if (req.user.role === 'admin') {
+                users = await User.find({
+                    _id: { $nin: [...participantIds, userId] }
+                }).select('_id name lastname email photo');
+            } else if (req.user.role === 'writer') {
                 users = await User.find({
                     _id: { $nin: [...participantIds, userId] },
                     role: 'user'

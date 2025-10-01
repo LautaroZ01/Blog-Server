@@ -256,7 +256,7 @@ export class DashboardController {
         try {
             const { status, category, tag, writer, search, page = "1" } = req.query
 
-            let query: Record<string, any>
+            let query: Record<string, any> = {}
             req.user.role !== 'admin' && (query = { author: req.user.id })
 
             if (status) query.status = status

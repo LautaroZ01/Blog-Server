@@ -170,7 +170,7 @@ export class PostController {
                 post.sections.push(...createdSections)
             }
 
-            post.readTime = calculateReadTime(fullContent) + 2
+            post.readTime = calculateReadTime(fullContent)
 
             req.category.posts.push(post.id)
 
