@@ -5,6 +5,7 @@ import { body, param } from "express-validator";
 import { postStatusValues } from "../models/Post";
 import { handleInputErrors } from "../middleware/validation";
 import { postExists, postMiddleware } from "../middleware/post";
+import { PdfController } from "../controllers/PdfController";
 
 const router = Router()
 
@@ -85,6 +86,13 @@ router.patch('/:postId/dislike',
     param('postId').isMongoId().withMessage('El id no es válido'),
     handleInputErrors,
     PostController.dislikePost
+)
+
+router.get('/:postId/pdf',
+    authenticate,
+    param('postId').isMongoId().withMessage('El id no es válido'),
+    handleInputErrors,
+    PdfController.sendPostAsPdf
 )
 
 export default router

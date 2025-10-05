@@ -9,7 +9,7 @@ interface IEmail {
     token: string
 }
 
-interface IEmailPassword {
+export interface IEmailPassword {
     email: string
     name: string
 }
