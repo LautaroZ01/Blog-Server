@@ -4,6 +4,7 @@ import { admin, authenticate, writer } from "../middleware/auth";
 import { body, param } from "express-validator";
 import { handleInputErrors } from "../middleware/validation";
 import { userExists } from "../middleware/user";
+import { PdfController } from "../controllers/PdfController";
 
 const router = Router()
 
@@ -90,6 +91,11 @@ router.get('/tag/:tagId',
 
 // Articulos
 router.get('/post', authenticate, writer, DashboardController.getPosts)
+router.get('/post/stats',
+    authenticate,
+    writer,
+    PdfController.postsStats
+)
 router.get('/post/:postId',
     authenticate,
     writer,
