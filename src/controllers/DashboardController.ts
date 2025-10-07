@@ -6,6 +6,7 @@ import Comment, { commentStatus, IComment } from "../models/Comment";
 import User, { IUser } from "../models/User";
 import { Types } from "mongoose";
 import { LIMIT_PER_PAGE } from "../utils/util";
+import Conversation from "../models/Conversation";
 
 interface Query {
     search?: string;
@@ -403,4 +404,74 @@ export class DashboardController {
             res.status(500).json({ error: 'Hubo un error' })
         }
     }
+
+    static getWriterStats = async (req: Request, res: Response) => {
+        try {
+            const userId = req.user._id
+            // Posts del escritor
+            const posts = await Post.find({ author: userId }).populate("comments");
+
+            const totalPosts = posts.length;
+            const totalComments = posts.reduce((acc, post) => acc + post.comments.length, 0);
+            const totalReactions = posts.reduce((acc, post) => acc + post.likes.length, 0);
+
+            // Conversaciones del escritor
+            const conversations = await Conversation.find({ participants: userId })
+
+            const totalConversations = conversations.length;
+
+            // Comentarios por mes (últimos 6 posts)
+            const lastSixPosts = posts
+                .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+                .slice(0, 6);
+
+            const commentsPerMonth = await Promise.all(
+                lastSixPosts.map(async (post) => {
+                    const comments = await Comment.find({ _id: { $in: post.comments } });
+                    const grouped = comments.reduce((acc: Record<string, number>, c) => {
+                        const month = new Date(c.createdAt).toLocaleString("default", { month: "short" });
+                        acc[month] = (acc[month] || 0) + 1;
+                        return acc;
+                    }, {});
+                    return {
+                        postTitle: post.title,
+                        data: grouped,
+                    };
+                })
+            );
+
+            // Vistas de los últimos 6 posts
+            const viewsLastPosts = lastSixPosts.map((post) => ({
+                title: post.title,
+                views: post.viewCount,
+            }));
+
+            // Ultimas 4 conversaciones
+            const lastConversations = await Conversation.find({ participants: userId })
+                .sort({ updatedAt: -1 })
+                .limit(4)
+                .populate({
+                    path: "messages",
+                    options: { sort: { createdAt: -1 }, limit: 1 },
+                    select: 'text isRead createdAt'
+                })
+                .populate("participants", "name lastname photo")
+                .select('-createdAt -updatedAt -__v')
+
+            const stats = {
+                totalPosts,
+                totalComments,
+                totalConversations,
+                totalReactions,
+                commentsPerMonth,
+                viewsLastPosts,
+                lastConversations,
+            }
+
+            res.json(stats);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Error al obtener estadísticas del escritor" });
+        }
+    };
 }

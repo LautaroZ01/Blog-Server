@@ -10,7 +10,12 @@ const commentStatus = {
 
 export type CommentStatus = typeof commentStatus[keyof typeof commentStatus]
 
-export interface IComment extends Document {
+export interface IBaseTimestamps {
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
+export interface IComment extends Document, IBaseTimestamps {
     content: string,
     post: Types.ObjectId
     author: Types.ObjectId

@@ -14,7 +14,12 @@ export const postStatusValues = Object.values(postStatus)
 
 export type PostStatus = typeof postStatus[keyof typeof postStatus]
 
-export interface IPost extends Document {
+export interface IBaseTimestamps {
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
+export interface IPost extends Document, IBaseTimestamps {
     title: string
     content: string
     slug: string

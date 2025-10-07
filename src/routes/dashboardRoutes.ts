@@ -65,6 +65,12 @@ router.get('/writer/:writerId?',
     DashboardController.getWriter
 )
 
+router.get('/writer-stats',
+    authenticate,
+    writer,
+    DashboardController.getWriterStats
+)
+
 // Categories
 router.get('/category',
     authenticate,
