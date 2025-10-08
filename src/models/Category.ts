@@ -14,7 +14,6 @@ const CategorySchema: Schema = new Schema({
         require: true,
         unique: true,
     },
-    // Se debe generar a partir del nombre
     slug: {
         type: String,
         require: true,
