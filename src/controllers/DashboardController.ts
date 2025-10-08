@@ -7,6 +7,7 @@ import User, { IUser } from "../models/User";
 import { Types } from "mongoose";
 import { LIMIT_PER_PAGE } from "../utils/util";
 import Conversation from "../models/Conversation";
+import Message from "../models/Message";
 
 interface Query {
     search?: string;
@@ -473,5 +474,79 @@ export class DashboardController {
             console.error(error);
             res.status(500).json({ message: "Error al obtener estadísticas del escritor" });
         }
-    };
+    }
+
+    static getAdminStats = async (req: Request, res: Response) => {
+        try {
+            const categories = await Category.aggregate([
+                {
+                    $lookup: {
+                        from: 'posts',
+                        localField: '_id',
+                        foreignField: 'category',
+                        as: 'posts'
+                    }
+                },
+                {
+                    $project: {
+                        name: 1,
+                        postCount: { $size: '$posts' }
+                    }
+                }
+            ]);
+
+            const postsByCategory = {
+                labels: categories.map(c => c.name),
+                data: categories.map(c => c.postCount)
+            };
+
+            const posts = await Post.find({}, 'title comments likes').populate('comments likes');
+            const commentsLikesPerPost = {
+                labels: posts.map(p => p.title),
+                comments: posts.map(p => p.comments.length),
+                likes: posts.map(p => p.likes.length)
+            };
+
+            const messagesByDay = await Message.aggregate([
+                {
+                    $group: {
+                        _id: {
+                            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+                        },
+                        count: { $sum: 1 }
+                    }
+                },
+                { $sort: { _id: 1 } }
+            ]);
+
+            const messagesTimeline = {
+                labels: messagesByDay.map(m => m._id),
+                data: messagesByDay.map(m => m.count)
+            };
+
+            const totalUsers = await User.countDocuments();
+            const totalPosts = await Post.countDocuments({ status: 'published' });
+            const totalViewsAgg = await Post.aggregate([
+                { $group: { _id: null, totalViews: { $sum: '$viewCount' } } }
+            ]);
+            const totalViews = totalViewsAgg[0]?.totalViews || 0;
+            const totalConversations = await Conversation.countDocuments();
+
+            const stats = {
+                totalUsers,
+                totalPosts,
+                totalViews,
+                totalConversations,
+                postsByCategory,
+                commentsLikesPerPost,
+                messagesTimeline
+            }
+
+            res.json(stats);
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Error al obtener estadísticas del admin" });
+        }
+    }
 }

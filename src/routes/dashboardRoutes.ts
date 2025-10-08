@@ -71,6 +71,12 @@ router.get('/writer-stats',
     DashboardController.getWriterStats
 )
 
+router.get('/admin-stats',
+    authenticate,
+    admin,
+    DashboardController.getAdminStats
+)
+
 // Categories
 router.get('/category',
     authenticate,
