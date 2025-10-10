@@ -29,7 +29,7 @@ passport.use(new GoogleStrategy({
         } else if (!user.providerId) {
             user.provider = 'google';
             user.providerId = profile.id;
-            if(!user.photo) {
+            if (!user.photo) {
                 user.photo = profile.photos?.[0]?.value
             }
             await user.save();
@@ -44,31 +44,31 @@ passport.use(new GoogleStrategy({
 passport.use(new FacebookStrategy({
     clientID: process.env.FACEBOOK_APP_ID!,
     clientSecret: process.env.FACEBOOK_APP_SECRET!,
-    callbackURL: "api/auth/facebook/callback",
-    profileFields: ['id', 'emails', 'name']
+    callbackURL: `${process.env.BACKEND_URL}/api/auth/facebook/callback`,
+    profileFields: ['id', 'emails', 'name', 'picture.type(large)']
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        // Busca al usuario por email
-        let user = await User.findOne({ email: profile.emails?.[0]?.value });
+        const name = profile.name?.givenName || profile.displayName;
+        const lastname = profile.name?.familyName;
+        const emailuser = ''
+        const email = profile.emails?.[0]?.value || `${emailuser.concat(name.toLowerCase(), lastname.toLowerCase())}@facebook.com`;
+        let user = await User.findOne({ email });
 
         if (!user) {
             user = new User({
                 provider: 'facebook',
                 providerId: profile.id,
-                name: profile.name.givenName || profile.displayName,
-                lastname: profile.name.familyName,
-                email: profile.emails?.[0]?.value,
+                name,
+                lastname,
+                email,
                 photo: profile.photos?.[0]?.value,
                 isVerified: true
             });
-
             await user.save();
         } else if (!user.providerId) {
             user.provider = 'facebook';
             user.providerId = profile.id;
-            if(!user.photo) {
-                user.photo = profile.photos?.[0]?.value
-            }
+            if (!user.photo) user.photo = profile.photos?.[0]?.value;
             await user.save();
         }
 
@@ -77,6 +77,7 @@ passport.use(new FacebookStrategy({
         return done(error, null);
     }
 }));
+
 
 passport.serializeUser((user: IUser, done) => {
     done(null, user._id);

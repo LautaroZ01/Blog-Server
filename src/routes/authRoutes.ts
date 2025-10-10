@@ -90,7 +90,7 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: `${process.env.FRONTEND_URL}/auth/login` }), AuthController.sessionCallBack);
 
-router.get('/facebook', passport.authenticate('facebook', { scope: ['profile', 'email'] }));
+router.get('/facebook', passport.authenticate('facebook', { scope: ['public_profile', 'email'] }))
 
 router.get('/facebook/callback', passport.authenticate('facebook', { failureRedirect: `${process.env.FRONTEND_URL}/auth/login` }), AuthController.sessionCallBack);
 
