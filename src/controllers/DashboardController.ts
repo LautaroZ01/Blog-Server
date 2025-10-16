@@ -408,7 +408,7 @@ export class DashboardController {
 
     static getWriterStats = async (req: Request, res: Response) => {
         try {
-            const userId = req.user._id
+            const userId = req.user.id
             // Posts del escritor
             const posts = await Post.find({ author: userId }).populate("comments");
 
@@ -456,7 +456,11 @@ export class DashboardController {
                     options: { sort: { createdAt: -1 }, limit: 1 },
                     select: 'text isRead createdAt'
                 })
-                .populate("participants", "name lastname photo")
+                .populate({
+                    path: "participants",
+                    match: { _id: { $ne: userId } },
+                    select: "name lastname photo"
+                })
                 .select('-createdAt -updatedAt -__v')
 
             const stats = {
